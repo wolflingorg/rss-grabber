@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/SlyMarbo/rss"
+	"github.com/opesun/goquery"
 	"gopkg.in/ini.v1"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -54,7 +55,25 @@ func ParseFeed(work tm.WorkRequest) {
 			item.Summary = value.Summary
 			item.Date = value.Date
 			item.Link = value.Link
-			item.FeedId = feed.Id
+			item.Feed = mgo.DBRef{
+				Collection: "feeds",
+				Id:         feed.Id,
+			}
+
+			x, err := goquery.ParseString(value.Content)
+			if err == nil {
+				// finding img
+				if img := x.Find("img"); img != nil {
+
+					item.Image = &Image{
+						Title: value.Title,
+						Url:   img.Attr("src"),
+					}
+				}
+
+				// clearing content
+				item.Content = strings.TrimSpace(x.Text())
+			}
 
 			var item_checksum = item.Checksum()
 
@@ -66,15 +85,16 @@ func ParseFeed(work tm.WorkRequest) {
 
 			checksum = append(checksum, item_checksum)
 		}
-		
+
 		var updated time.Time = time.Now()
 		var period time.Duration = feed.Period
-		if period == 0 {
-			period = 15*time.Minute
-		}
-		
+
 		if isupdated == false {
-			period = period*2
+			period = period * 2
+		}
+
+		if period == 0 {
+			period = 15 * time.Minute
 		}
 
 		// update feed info
@@ -83,14 +103,12 @@ func ParseFeed(work tm.WorkRequest) {
 			"description": result.Description,
 			"link":        result.Link,
 			"image": bson.M{
-				"title":  result.Image.Title,
-				"url":    result.Image.Url,
-				"height": result.Image.Height,
-				"width":  result.Image.Width,
+				"title": result.Title,
+				"url":   result.Image.Url,
 			},
 			"updated":  updated,
-			"refresh": updated.Add(period)
-			"period": period
+			"refresh":  updated.Add(period),
+			"period":   period,
 			"checksum": checksum,
 		}})
 
@@ -115,7 +133,7 @@ type Feed struct {
 
 type Item struct {
 	Id      bson.ObjectId `json:"id" bson:"_id,omitempty"`
-	FeedId  bson.ObjectId `json:"feed_id" bson:"_feed_id,omitempty"`
+	Feed    mgo.DBRef
 	Title   string
 	Summary string
 	Content string
@@ -131,10 +149,8 @@ func (this *Item) Checksum() string {
 }
 
 type Image struct {
-	Title  string
-	Url    string
-	Height uint32
-	Width  uint32
+	Title string
+	Url   string
 }
 
 // Check if string exists in slice
@@ -173,8 +189,12 @@ func main() {
 	// get feeds
 	c := db.C("feeds")
 	var feeds []Feed
-	//err = c.Find(bson.M{"_id": bson.ObjectIdHex("565e012cc321d3be0004ef0b")}).Limit(1).All(&feeds)
-	err = c.Find(bson.M{}).Limit(10).All(&feeds)
+	err = c.Find(bson.M{
+		"$or": []interface{}{
+			bson.M{"refresh": bson.M{"$lte": time.Now()}},
+			bson.M{"refresh": bson.M{"$exists": false}},
+		},
+	}).Limit(100).All(&feeds)
 	if err != nil {
 		panic(err)
 	}
