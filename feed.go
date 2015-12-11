@@ -19,4 +19,5 @@ type Feed struct {
 	Refresh     time.Time
 	Period      time.Duration
 	Checksum    []string
+	Lang        string
 }

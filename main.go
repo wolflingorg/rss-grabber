@@ -42,7 +42,7 @@ func main() {
 	for {
 		select {
 		case <-time.After(config.Parser.Interval):
-			AddTasksHandler(config)
+			AddTasksHandler()
 		}
 	}
 }

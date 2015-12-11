@@ -5,15 +5,12 @@ package main
 import (
 	"fmt"
 	"github.com/SlyMarbo/rss"
-	"github.com/opesun/goquery"
-	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"strings"
 	tm "task-manager"
 	"time"
 )
 
-func FeedParseHandler(work tm.WorkRequest) {
+func FeedParseHandler(work tm.WorkRequest, worker_id int) {
 	c := db.C("feeds")
 	n := db.C("news")
 
@@ -26,45 +23,18 @@ func FeedParseHandler(work tm.WorkRequest) {
 			return
 		}
 
-		// fill and insert items to db
+		// prepare items
 		var checksum []string
 		var isupdated bool = false
 		for _, value := range result.Items {
-			item := new(Item)
-			item.Title = value.Title
-			item.Content = value.Content
-			item.Summary = value.Summary
-			item.Date = value.Date
-			item.Link = value.Link
-			item.Feed = mgo.DBRef{
-				Collection: "feeds",
-				Id:         feed.Id,
-			}
+			item := NewItemFromRSS(value, &feed)
 
-			x, err := goquery.ParseString(value.Content)
-			if err == nil {
-				// trying to find img
-				if img := x.Find("img"); img != nil {
-
-					item.Image = &Image{
-						Title: value.Title,
-						Url:   img.Attr("src"),
-					}
-				}
-
-				// clearing content
-				item.Content = strings.TrimSpace(x.Text())
-			}
-
-			var item_checksum = item.Checksum()
-
-			// insert item
-			if stringInSlice(item_checksum, feed.Checksum) == false {
+			if stringInSlice(item.Checksum, feed.Checksum) == false {
 				n.Insert(&item)
 				isupdated = true
 			}
 
-			checksum = append(checksum, item_checksum)
+			checksum = append(checksum, item.Checksum)
 		}
 
 		var updated time.Time = time.Now()

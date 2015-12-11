@@ -2,6 +2,5 @@
 package main
 
 type Image struct {
-	Title string
-	Url   string
+	Url string
 }

@@ -1,5 +1,5 @@
 // Add tasks for parse
-// Uses global variable "DB"
+// Uses global variable "DB" and "config"
 package main
 
 import (
@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func AddTasksHandler(config *Config) {
+func AddTasksHandler() {
 	c := db.C("feeds")
 	var feeds []Feed
 
