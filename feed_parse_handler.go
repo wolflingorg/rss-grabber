@@ -56,7 +56,6 @@ func FeedParseHandler(work tm.WorkRequest, worker_id int) {
 			"description": result.Description,
 			"link":        result.Link,
 			"image": bson.M{
-				"title": result.Title,
 				"url":   result.Image.Url,
 			},
 			"updated":  updated,
