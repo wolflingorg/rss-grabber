@@ -47,7 +47,7 @@ func FeedParseHandler(work tm.WorkRequest, worker_id int) {
 			period = period / 2
 		}
 
-		if period == 0 {
+		if period <= 15*time.Minute {
 			period = 15 * time.Minute
 		}
 
