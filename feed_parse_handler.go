@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/SlyMarbo/rss"
 	"gopkg.in/mgo.v2/bson"
 	tm "task-manager"
@@ -20,18 +19,19 @@ func FeedParseHandler(work tm.WorkRequest, worker_id int) {
 		result, err := rss.Fetch(feed.UpdateURL)
 		if err != nil {
 			c.Update(bson.M{"_id": feed.Id}, bson.M{"$set": bson.M{"errors": feed.Errors + 1}})
+			LogInfo.Printf("Couldnt get rss feed %s", err)
 			return
 		}
 
 		// prepare items
 		var checksum []string
-		var isupdated bool = false
+		var new_items_count int = 0
 		for _, value := range result.Items {
 			item := NewItemFromRSS(value, &feed)
 
 			if stringInSlice(item.Checksum, feed.Checksum) == false {
 				n.Insert(&item)
-				isupdated = true
+				new_items_count += 1
 			}
 
 			checksum = append(checksum, item.Checksum)
@@ -40,10 +40,11 @@ func FeedParseHandler(work tm.WorkRequest, worker_id int) {
 		var updated time.Time = time.Now()
 		var period time.Duration = feed.Period
 
-		// TODO refactor this
 		// this part tries to decide how often we need to update this feed
-		if isupdated == false {
+		if new_items_count == 0 {
 			period = period * 2
+		} else if new_items_count == len(result.Items) {
+			period = period / 2
 		}
 
 		if period == 0 {
@@ -56,7 +57,7 @@ func FeedParseHandler(work tm.WorkRequest, worker_id int) {
 			"description": result.Description,
 			"link":        result.Link,
 			"image": bson.M{
-				"url":   result.Image.Url,
+				"url": result.Image.Url,
 			},
 			"updated":  updated,
 			"refresh":  updated.Add(period),
@@ -64,7 +65,6 @@ func FeedParseHandler(work tm.WorkRequest, worker_id int) {
 			"checksum": checksum,
 		}})
 
-		// TODO delete this
-		fmt.Printf("\t- Parse feed %s finished\n", feed.Id)
+		LogInfo.Printf("Parse feed %s finished\n", feed.Id)
 	}
 }

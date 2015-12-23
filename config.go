@@ -3,11 +3,13 @@ package main
 
 import (
 	"gopkg.in/ini.v1"
+	"log"
 	"time"
 )
 
 type Config struct {
-	Db struct {
+	LogPath string
+	Db      struct {
 		Host []string
 	}
 	Parser struct {
@@ -21,6 +23,6 @@ type Config struct {
 func LoadConfig(config *Config, CONFIG_PATH string) {
 	err := ini.MapTo(config, CONFIG_PATH)
 	if err != nil {
-		panic("Could parse config file")
+		log.Fatalf("Couldnt parse config file: %s\n", err)
 	}
 }
