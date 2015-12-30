@@ -37,7 +37,5 @@ func AddTasksHandler() {
 		tm.NewWork(work)
 	}
 
-	if len(feeds) > 0 {
-		LogInfo.Printf("%d tasks added\n", len(feeds))
-	}
+	LogInfo.Printf("%d tasks added\n", len(feeds))
 }

@@ -64,7 +64,5 @@ func FeedParseHandler(work tm.WorkRequest, worker_id int) {
 			"period":   period,
 			"checksum": checksum,
 		}})
-
-		LogInfo.Printf("Parse feed %s finished\n", feed.Id)
 	}
 }

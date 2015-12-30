@@ -23,6 +23,8 @@ type Item struct {
 	Date     time.Time
 	Checksum string
 	Lang     string
+	Status   uint
+	Errors   uint
 }
 
 // Calculate item checksum
@@ -40,12 +42,14 @@ func NewItemFromRSS(rss_item *rss.Item, feed *Feed) Item {
 	item.Title = rss_item.Title
 	item.Content = rss_item.Content
 	item.Summary = rss_item.Summary
-	item.Date = rss_item.Date
+	item.Date = time.Now()
 	item.Link = rss_item.Link
 	item.Feed = mgo.DBRef{
 		Collection: "feeds",
 		Id:         feed.Id,
 	}
+	item.Status = 1
+	item.Errors = 0
 
 	x, err := goquery.ParseString(rss_item.Content)
 	if err == nil {

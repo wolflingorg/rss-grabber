@@ -50,7 +50,11 @@ func main() {
 	db = session.DB("rss")
 
 	// start task manager
-	tm.StartDispatcher(config.Parser.Workers, FeedParseHandler)
+	tm.StartDispatcher(tm.TaskManager{
+		NumWorkers: config.Parser.Workers,
+		NumTasks:   config.Parser.Tasks,
+		Handler:    FeedParseHandler,
+	})
 
 	// parse feeds
 	for {
