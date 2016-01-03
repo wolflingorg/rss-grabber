@@ -20,4 +20,6 @@ type Feed struct {
 	Period      time.Duration
 	Checksum    []string
 	Lang        string
+	Category    string
+	Country     string
 }

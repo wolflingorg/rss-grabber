@@ -25,6 +25,8 @@ type Item struct {
 	Lang     string
 	Status   uint
 	Errors   uint
+	Category string
+	Country  string
 }
 
 // Calculate item checksum
@@ -50,6 +52,8 @@ func NewItemFromRSS(rss_item *rss.Item, feed *Feed) Item {
 	}
 	item.Status = 1
 	item.Errors = 0
+	item.Country = feed.Country
+	item.Category = feed.Category
 
 	x, err := goquery.ParseString(rss_item.Content)
 	if err == nil {
